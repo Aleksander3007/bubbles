@@ -12,15 +12,17 @@ import com.badlogic.gdx.utils.viewport.Viewport;
  */
 public class SceneRenderer {
 	private SpriteBatch spriteBatch_;
-	private OrthographicCamera  camera_;
+	public OrthographicCamera  camera_; // TODO: Должен быть закрытым.
 	private Viewport viewport_;
 	
 	public static float gameWidth = 640;
 	public static float gameHeight = 480;
+
+	private World world_;
 	
-	private OrbsBox orbsBox_;
-	
-	public SceneRenderer(OrbsBox orbsBox) {
+	public SceneRenderer(World world) {
+		
+		this.world_ = world;
 		
 		float screenWidth = Gdx.graphics.getWidth();
         float screenHeight = Gdx.graphics.getHeight();      
@@ -36,8 +38,6 @@ public class SceneRenderer {
         camera_.position.set(camera_.viewportWidth / 2, camera_.viewportHeight / 2, 0);
         
         spriteBatch_ = new SpriteBatch();
-        
-        this.orbsBox_ = orbsBox;
 	}
 	
 	public void render () {
@@ -56,11 +56,20 @@ public class SceneRenderer {
 		// TODO: Нужен алгоритм отрисовки по вх. массиву готовых orbs.
 		//Vector2 center = new Vector2((gameWidth_ / 2 - 64), (gameHeight_ / 2 - 64));
 		//Vector2 center = new Vector2(0, 0);
-		for (Orb orb : orbsBox_.getOrbs()) {
-			spriteBatch_.draw(orb.getTexture(),
-					orb.getX(),
-					orb.getY()
-					);
+		for (GameEntity gameEntity : world_.getEntities()) {
+			if (gameEntity != null) {
+				spriteBatch_.draw(gameEntity.getTexture(),
+						gameEntity.getX(),
+						gameEntity.getY(),
+						gameEntity.getWidth() / 2, // относительно x-координаты; Вращение вокруг точки  = (x + originX);
+						gameEntity.getHeight() / 2, // относительно y-координаты;
+						gameEntity.getWidth(),
+						gameEntity.getHeight(),
+						gameEntity.getScaleX(),
+						gameEntity.getScaleY(),
+						gameEntity.getRotationDeg()
+						);
+			}
 		}
 		spriteBatch_.end();
 	}
