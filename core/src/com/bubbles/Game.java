@@ -7,31 +7,23 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 /**
- * Описывает всю игровую логику (по сути -  controller из MVC).
+ * Описывает всю игровую логику (по сути -  тонкий controller из MVC).
  */
 public class Game extends InputAdapter/* TODO: Возможно необходимо вынести в отделный клас и по pattern Subcribe */{
-	private World world_;
+	private GameScreen screen_;
 	
 	
 	// TODO: Этого тут не должно быть.
 	public OrthographicCamera  camera_;
 	
-	public Game(World world) {	
-		this.world_ = world;
+	public Game(GameScreen screen) {	
+		this.screen_ = screen;
 	}
 	
 	@Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button)
     {
-		// Получаем координаты нажатия в мировой системе координат.
-		Vector3 worldCoords = camera_.unproject(new Vector3(screenX, screenY, 0.0f));
-		
-		if (world_.hit(new Vector2(worldCoords.x, worldCoords.y))) {
-    		// TODO: Записываем, что нажатие было на orbsBox.
-    		return true;
-    	};
-    	
-        return true;
+        return false;
     }
 
     @Override
@@ -40,10 +32,8 @@ public class Game extends InputAdapter/* TODO: Возможно необходимо вынести в отд
     	// Получаем координаты нажатия в мировой системе координат.
     	Vector3 worldCoords = camera_.unproject(new Vector3(screenX, screenY, 0.0f));
     	
-    	if (world_.hit(new Vector2(worldCoords.x, worldCoords.y))) {
-    		// TODO: Записываем, что нажатие было на orbsBox.
-    		return true;
-    	};
+    	// TODO: По идеи везде hit и необходимо передавать Action.
+    	screen_.hit(new Vector2(worldCoords.x, worldCoords.y));
     			
         return true;
     }
@@ -51,8 +41,8 @@ public class Game extends InputAdapter/* TODO: Возможно необходимо вынести в отд
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button)
     {
-    	Gdx.app.log("Input Event", "touchUp");
-    	world_.clearSelectedOrbs();
+    	// TODO: По идеи везде hit и необходимо передавать Action.
+    	screen_.touchUp();
         return true;
     }
 
@@ -64,7 +54,7 @@ public class Game extends InputAdapter/* TODO: Возможно необходимо вынести в отд
     }
     
     public void dispose () {
-    	world_.dispose();
+    	
     }
     
     public void update() {

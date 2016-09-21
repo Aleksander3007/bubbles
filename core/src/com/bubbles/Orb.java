@@ -4,13 +4,17 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 
 public class Orb extends GameEntity {
-	public final static float WIDTH = 64;
-	public final static float HEIGHT = 64;
+	public static float WIDTH = 64;
+	public static float HEIGHT = 64;
 	private OrbType orbType_;
+	private int rowNo_;
+	private int colNo_;
 	
-	public Orb(OrbType orbType, Vector2 pos, TextureRegion texture) {
+	public Orb(OrbType orbType, Vector2 pos, int colNo, int rowNo, TextureRegion texture) {
 		this(pos, texture);
 		this.orbType_ = orbType;
+		this.colNo_ = colNo;
+		this.rowNo_ = rowNo;
 	}
 	
 	public boolean hit(Vector2 coords) {
@@ -25,10 +29,21 @@ public class Orb extends GameEntity {
 
 	@Override
 	public float getHeight() {
-		// TODO Auto-generated method stub
 		return Orb.HEIGHT;
 	}
+	
+	public int getColNo() {
+		return this.colNo_;
+	}
+	
+	public int getRowNo() {
+		return this.rowNo_;
+	}
 
+	public OrbType getType() {
+		return this.orbType_;
+	}
+	
 	@Override
 	public void dispose() {
 	}

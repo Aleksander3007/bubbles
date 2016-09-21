@@ -10,8 +10,6 @@ import com.badlogic.gdx.utils.ArrayMap;
 
 public class World {
 	private AssetManager assets_;
-	private boolean isLoaded_;	//  TODO: Уже тянет на состояния, если не вынести загрузку.
-	private boolean isCreated_; //  TODO: Уже тянет на состояния, если не вынести загрузку.
 	private TextureRegion  touchLineTexture_;
 	private ArrayMap<OrbType, TextureRegion> orbTextures_ = new ArrayMap<OrbType, TextureRegion>();
 	
@@ -30,17 +28,22 @@ public class World {
 	private Array<GameEntity> gameEntities_ = new Array<GameEntity>();
 	
 	public World(final Vector2 pos, AssetManager assets) {
+		// Тут определяются параметры которые не зависят от внешнего мира.
 		this.assets_ = assets;
 		this.pos_ = pos;
-
-		this.nColumns_ = (int) (Gdx.graphics.getWidth() / Orb.WIDTH);
-		this.nRows_ = (int) (Gdx.graphics.getHeight() / Orb.HEIGHT);
+	}
+	
+	public void init(final float worldWidth, final float worldHeight) {
+		resize(worldWidth, worldHeight);
+		initTextures();
+		createLevel();
+	}
+	
+	public void resize(final float worldWidth, final float worldHeight) {
+		this.nColumns_ = (int) Math.floor(worldWidth / Orb.WIDTH);
+		this.nRows_ = (int) Math.floor(worldHeight  / Orb.HEIGHT);
 		this.height_ = Orb.WIDTH * this.nRows_;
 		this.width_ = Orb.HEIGHT * this.nColumns_;
-		
-		this.isCreated_ = false;
-		this.isLoaded_ = false;
-		loadContentAsync();
 	}
 	
 	public boolean hit(Vector2 coords) {
@@ -49,35 +52,32 @@ public class World {
 		
 		if (hitX && hitY) {
 			// Определяем был ли нажат на элемент.
-			for (Orb orb : orbs_) {		
+			for (Orb orb : orbs_) {
 				if (orb.hit(coords)) {
-					boolean isSelected = false;
-					for (Orb selectedOrb : selectedOrbs_) {
-						if (orb == selectedOrb) {
-							isSelected = true;
-							break;
-						}
-					}
-					
-					if (!isSelected) {
+					if (!isOrbSelected(orb)) {
 						
-						// TODO: 1. Необходимо проверить соседний ли это элемент.
-						// 1.1. Если да, то все ок.
-						// 1.2. Если нет, то обнуляем selectedOrbs_.
-						// Уже в Game после отжатия проверяем World.ProfitByOrbs() - здесь проверяется выделены ли объекты одного типа и считается очки за это.
+						// TODO:  Уже в Game после отжатия проверяем World.ProfitByOrbs() - здесь проверяется выделены ли объекты одного типа и считается очки за это.
 						
-						selectedOrbs_.add(orb);
-						
-						if (selectedOrbs_.size >= 2) {
-							Orb prevOrb = selectedOrbs_.get(selectedOrbs_.size - 2);
-							
-							Vector2 touchLinePos = getTouchLinePos(prevOrb, orb);
-							float touchLineRotationDeg = getTouchLineRotationDeg(prevOrb, orb);
-							
-							TouchLine touchLine = new TouchLine(touchLinePos, touchLineRotationDeg, touchLineTexture_);
-							
-							touchLines_.add(touchLine);
-							gameEntities_.add((GameEntity)touchLine);
+						// Если выбран до этого как минимум еще один.
+						if (selectedOrbs_.size > 0) {
+							Orb prevOrb = selectedOrbs_.peek();
+
+							// Если соседний, то выделяем (защита от нажатий несколькими пальцами в разных местах).
+							if ((Math.abs((orb.getColNo() - prevOrb.getColNo())) == 1) ||
+									(Math.abs((orb.getRowNo() - prevOrb.getRowNo())) == 1)) {
+								selectedOrbs_.add(orb);
+								
+								Vector2 touchLinePos = getTouchLinePos(prevOrb, orb);
+								float touchLineRotationDeg = getTouchLineRotationDeg(prevOrb, orb);
+								
+								TouchLine touchLine = new TouchLine(touchLinePos, touchLineRotationDeg, touchLineTexture_);
+								
+								touchLines_.add(touchLine);
+								gameEntities_.add((GameEntity)touchLine);
+							}
+						} 
+						else {
+							selectedOrbs_.add(orb);
 						}
 					}
 					
@@ -89,6 +89,61 @@ public class World {
 		return (hitX && hitY);
 	}
 	
+	public int profitByOrbs() {
+		// TODO: Возможно это должно быть в классе GameRules.
+		// А лучше GameRule, и GameRuleManager.
+		if (selectedOrbs_.size >= 2) {
+			OrbType orbType = selectedOrbs_.first().getType();
+			for (Orb orb : selectedOrbs_) {
+				if (orb.getType() != orbType) {
+					return 0;
+				}
+			}
+			// TODO: Конечно тут должен быть более сложный расчет. (Чем больше выделено тем выше ставка).
+			return (selectedOrbs_.size * 20); // TODO: Magic number!
+		}
+		else {
+			return 0;
+		}
+	}
+	
+	public void update() {
+		//....
+	}
+	
+	public void clearSelectedOrbs() {	
+		for (TouchLine touchLine : touchLines_) {
+			gameEntities_.removeValue((GameEntity)touchLine, true);
+		}
+		touchLines_.clear();
+		selectedOrbs_.clear();
+	}
+	
+	public Array<GameEntity> getEntities() {
+		return gameEntities_;
+	}
+	
+	public void dispose () {
+		for (Orb orb : orbs_) {
+			orb.dispose();
+		}
+		orbs_.clear();
+		
+		for (TouchLine touchLine : touchLines_) {
+			touchLine.dispose();
+		}
+		touchLines_.clear();
+	}
+	
+	private boolean isOrbSelected(Orb orb) {
+		for (Orb selectedOrb : selectedOrbs_) {
+			if (orb == selectedOrb) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private float getTouchLineRotationDeg(Orb prevOrb, Orb orb) {
 		// Если выделение идёт снизу вверх.
 		if (orb.getY() != prevOrb.getY()) {
@@ -138,21 +193,6 @@ public class World {
 		}
 	}
 
-	public void update() {
-		if (!isCreated_) {
-			doneLoading();
-
-			if (isLoaded_) {
-				initTextures();
-				Gdx.app.log("Info", "Textures of world are loaded.");
-				
-				createLevel();
-				
-				isCreated_ = true;
-			}
-		}
-	}
-	
 	private void createLevel() {
 		OrbType orbType;
 		TextureRegion orbTexture;
@@ -166,7 +206,7 @@ public class World {
 						(float) Orb.HEIGHT * iRow
 						);
 				
-				Orb orb = new Orb(orbType, orbPos, orbTexture);
+				Orb orb = new Orb(orbType, orbPos, iCol, iRow, orbTexture);
 				orbs_.add(orb);
 				gameEntities_.add((GameEntity)orb);
 			}
@@ -183,43 +223,5 @@ public class World {
 		
 		// TODO: TouchLine.ASSET_DECRIPTOR - вообще всё будет в одном файле. ПОТОМ TouchLine.ASSET_DESCRIPTOR - удалить, добавить общий WORLD_DESCRITOR.
 		touchLineTexture_ = new TextureRegion(assets_.get(TouchLine.ASSET_DESCRIPTOR), 0, 0, 256, 64);
-	}
-
-	public void clearSelectedOrbs() {	
-		for (TouchLine touchLine : touchLines_) {
-			gameEntities_.removeValue((GameEntity)touchLine, true);
-		}
-		touchLines_.clear();
-		selectedOrbs_.clear();
-	}
-	
-	public Array<GameEntity> getEntities() {
-		return gameEntities_;
-	}
-	
-	public void dispose () {
-		for (Orb orb : orbs_) {
-			orb.dispose();
-		}
-		orbs_.clear();
-		
-		for (TouchLine touchLine : touchLines_) {
-			touchLine.dispose();
-		}
-		touchLines_.clear();
-	}
-	
-	private void loadContentAsync() {
-		// TODO: Вообще надо вынести все, т.к. у нас сразу все текстуры прогружаются (т.к. по сути один экран).
-		assets_.load("circles-2.png", Texture.class);
-		assets_.load(TouchLine.ASSET_DESCRIPTOR);
-		assets_.load("green-bubble-3.png", Texture.class);
-	}
-	
-	private void doneLoading()
-	{
-		if (!isLoaded_) {
-			isLoaded_ = assets_.update() ? true : false;
-		}
 	}
 }

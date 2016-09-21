@@ -1,6 +1,5 @@
 package com.bubbles;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetDescriptor;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -22,8 +21,7 @@ public class TouchLine extends GameEntity{
 
 	@Override
 	public void dispose() {
-		// TODO Auto-generated method stub
-		
+		// TODO: Auto-generated method stub
 	}
 
 	@Override
