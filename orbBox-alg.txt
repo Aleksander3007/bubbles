@@ -1,0 +1,38 @@
+// Алгоритм построения Box of Orbs, с влиянием на соседей.
+
+int numOrbTypes = OrbType.values().length;
+		int orbCell[][][] = new int[nRows_][nColumns_][numOrbTypes];
+		
+		for (int iRow = 0; iRow < nRows_; iRow++) {
+			for (int iCol = 0; iCol < nColumns_; iCol++) {
+				for (int iOrbType = 0; iOrbType < numOrbTypes; iOrbType++) {
+					orbCell[iRow][iCol][iOrbType] = 1;
+				}
+			}
+		}
+		
+		for (int iRow = 0; iRow < nRows_; iRow++) {
+			for (int iCol = 0; iCol < nColumns_; iCol++) {
+				// Поиск всех вероятностей выпадения типов Orb.
+				int sumProbabilities = 0;
+				for (int iOrbType = 0; iOrbType < numOrbTypes; iOrbType++) {
+					sumProbabilities += orbCell[iRow][iCol][iOrbType];
+				}
+				double randomVal = Math.random() * sumProbabilities;
+				
+				double range = 0;
+				for (int iOrbType = 0; iOrbType < numOrbTypes; iOrbType++) {
+					range += orbCell[iRow][iCol][iOrbType];
+					if (randomVal <= range) {
+						for (int i = -1; i <= 1; i++) {
+							for (int j = -1; j <= 1; j++) {
+								if (((iRow + i) >= 0) && ((iCol + j) >= 0) && ((iRow + i) < nRows_) && ((iCol + j) < nColumns_))
+									orbCell[iRow + i][iCol + j][iOrbType]++;
+							}
+						}
+						createOrb(OrbType.values()[iOrbType], iRow, iCol);
+						break;
+					}
+				}
+			}
+		}

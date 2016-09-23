@@ -1,5 +1,6 @@
 package com.bubbles;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetDescriptor;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -19,6 +20,13 @@ public class TouchLine extends GameEntity{
 		super(pos, rotationDeg, texture);
 	}
 
+	public TouchLine(Orb orb1, Orb orb2, TextureRegion texture) {
+		super(new Vector2(0.0f, 0.0f), 0.0f, texture);
+		
+		this.pos_ = calculatePos(orb1, orb2);
+		this.rotationDeg_ =  calculateRotationDeg(orb1, orb2);
+	}
+	
 	@Override
 	public void dispose() {
 		// TODO: Auto-generated method stub
@@ -34,4 +42,52 @@ public class TouchLine extends GameEntity{
 		return TouchLine.HEIGHT;
 	}
 	
+	private Vector2 calculatePos(Orb orb1, Orb orb2) {
+		Orb startOrb;
+		// Если выделение идёт снизу вверх.
+		if (orb2.getY() != orb1.getY()) {
+			// Если выделение идёт снизу вверх.
+			if (orb2.getY() > orb1.getY()) {
+				Gdx.app.log("World.hit", "bottom to top");
+				startOrb = orb1;
+			} 
+			// Если выделение идёт сверху вниз.
+			else {
+				Gdx.app.log("World.hit", "top to bottom");
+				startOrb = orb2;
+			}
+			
+			return new Vector2(
+					startOrb.getX() + (Orb.WIDTH / 2) - (TouchLine.WIDTH / 2),
+					startOrb.getY() + Orb.HEIGHT  - (TouchLine.HEIGHT / 2)
+					);
+		} 
+		else {
+			// Если выделение идёт слево направо.
+			if (orb2.getX() > orb1.getX()) {
+				Gdx.app.log("World.hit", "left to right");
+				startOrb = orb1;
+			}
+			// Если выделение идёт справо налево.
+			else {
+				Gdx.app.log("World.hit", "right to left");
+				startOrb = orb2;
+			}
+			
+			return new Vector2(
+					startOrb.getX() + (Orb.WIDTH / 2),
+					startOrb.getY() + (Orb.HEIGHT / 2) - (TouchLine.HEIGHT / 2)
+					);
+		}
+	}
+	
+	private float calculateRotationDeg(Orb orb1, Orb orb2) {
+		// Если выделение идёт снизу вверх.
+		if (orb2.getY() != orb1.getY()) {
+			return 90;
+		}
+		else {
+			return 0;
+		}
+	}
 }

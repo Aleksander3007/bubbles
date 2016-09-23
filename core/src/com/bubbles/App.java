@@ -1,23 +1,35 @@
 package com.bubbles;
 
 /**
+ * Мысли и развитие.
  * 1. Сделать ачивки - pattern Observer (Наблюдатель).
  * 1.1. Открывать новое за очки (например, какие-нибудь новые  фоны, новые Orbs и т.д.)
  * 2. Контент
- * 3. Взаимодействие пользователя с игрой
- * 4.  3d - прозрачные orbs (надо ли?). - избыточно получается!
- * 5. Отрисовка линии при движении.
- * 6. Кнопка рестарта.
- * 7. Возможно нужен конечный автомат, как минимум два состояни - загрузка и игра.
+ * 3.  3d - прозрачные orbs (надо ли?). - избыточно получается!
+ * 4. Кнопка рестарта.
+ * 5. Возможно нужен конечный автомат, как минимум два состояни - загрузка и игра.
  * 		Хотя если загрузку вынести (т.к. по сути один экран и весь контент загружается сразу).
  * 		То и состояний не будет.
+ * 6. implements interface RenderingObject или class DisplayableObject.
+ * 7. Выделение по диагонали?.
+ * 8. Отмена действий?
  */
+
+// TODO: Панель SkillsPanel.
+// TODO: Переход на чистый Android SDK.
+// TODO: Ачивки.
+// TODO: Анимация (на нажатие кнопки, на выделение объекта).
+// TODO: Звуковое сопровождение действий.
+// TODO: Обдумать и создать все типы реальные (скорее всего должны быть разные формы для разного цвета - например, красный - сфера, зеленый - квандрат и т.д.).
+// TODO: Описать остальные спец. orb.
+// TODO: Игровой баланс.
+// TODO: Кнопка exit.
+
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.math.Vector2;
 
 /*
  * Resolution[] resolutions = {
@@ -119,10 +131,14 @@ public class App extends ApplicationAdapter {
 	
 	private void loadContentAsync() {
 		isLoading_ = true;
-		// TODO: Вообще надо вынести все, т.к. у нас сразу все текстуры прогружаются (т.к. по сути один экран).
+		// TODO: Должен читаться из файла.
 		assets_.load("circles-2.png", Texture.class);
-		assets_.load(TouchLine.ASSET_DESCRIPTOR);
 		assets_.load("green-bubble-3.png", Texture.class);
+		assets_.load("universal.png", Texture.class);
+		assets_.load("red-double-orb.png", Texture.class);
+		assets_.load("red-rowsEater-orb.png", Texture.class);
+		assets_.load(TouchLine.ASSET_DESCRIPTOR);
 		assets_.load(ScoreLabel.ASSET_DESCRIPTOR);
+		assets_.load(RestartButton.ASSET_DESCRIPTOR);
 	}
 }

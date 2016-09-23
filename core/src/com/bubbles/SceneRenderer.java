@@ -52,6 +52,7 @@ public class SceneRenderer {
 		spriteBatch_.setProjectionMatrix(camera_.combined);
 		spriteBatch_.begin();
 
+		
 		for (GameEntity gameEntity : screen_.getEntities()) {
 			if (gameEntity != null) {
 				spriteBatch_.draw(gameEntity.getTexture(),

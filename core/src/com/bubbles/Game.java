@@ -41,8 +41,11 @@ public class Game extends InputAdapter/* TODO: Возможно необходимо вынести в отд
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button)
     {
+    	// Получаем координаты нажатия в мировой системе координат.
+    	Vector3 worldCoords = camera_.unproject(new Vector3(screenX, screenY, 0.0f));
+    	
     	// TODO: По идеи везде hit и необходимо передавать Action.
-    	screen_.touchUp();
+    	screen_.touchUp(new Vector2(worldCoords.x, worldCoords.y));
         return true;
     }
 

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<orbs>
+	<orb orbType="YELLOW" orbSpecType="NONE">
+		<texture path="circles-2.png" x="0" y="0" width="256" height="256"></texture>
+	</orb>
+	<orb orbType="YELLOW" orbSpecType="DOUBLE">
+		<texture path="circles-2.png" x="0" y="0" width="256" height="256"></texture>
+	</orb>
+	<orb orbType="YELLOW" orbSpecType="ROWS_EATER">
+		<texture path="circles-2.png" x="0" y="0" width="256" height="256"></texture>
+	</orb>
+	
+	<orb orbType="RED" orbSpecType="NONE">
+		<texture path="circles-2.png" x="256" y="0" width="256" height="256"></texture>
+	</orb>
+	<orb orbType="RED" orbSpecType="DOUBLE">
+		<texture path="red-double-orb.png" x="0" y="0" width="256" height="256"></texture>
+	</orb>
+	<orb orbType="RED" orbSpecType="ROWS_EATER">
+		<texture path="red-rowsEater-orb.png" x="0" y="0" width="256" height="256"></texture>
+	</orb>
+	
+	<orb orbType="GREEN" orbSpecType="NONE">
+		<texture path="green-bubble-3.png" x="0" y="0" width="256" height="256"></texture>
+	</orb>
+	<orb orbType="GREEN" orbSpecType="DOUBLE">
+		<texture path="green-bubble-3.png" x="0" y="0" width="256" height="256"></texture>
+	</orb>
+	<orb orbType="GREEN" orbSpecType="ROWS_EATER">
+		<texture path="green-bubble-3.png" x="0" y="0" width="256" height="256"></texture>
+	</orb>
+	
+	<orb orbType="UNIVERSAL" orbSpecType="NONE">
+		<texture path="universal.png" x="0" y="0" width="256" height="256"></texture>
+	</orb>
+	<orb orbType="UNIVERSAL" orbSpecType="DOUBLE">
+		<texture path="universal.png" x="0" y="0" width="256" height="256"></texture>
+	</orb>
+	<orb orbType="UNIVERSAL" orbSpecType="ROWS_EATER">
+		<texture path="universal.png" x="0" y="0" width="256" height="256"></texture>
+	</orb>
+</orbs>

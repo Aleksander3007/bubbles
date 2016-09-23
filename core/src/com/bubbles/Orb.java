@@ -6,15 +6,17 @@ import com.badlogic.gdx.math.Vector2;
 public class Orb extends GameEntity {
 	public static float WIDTH = 64;
 	public static float HEIGHT = 64;
-	private OrbType orbType_;
+	private OrbType type_;
+	private OrbSpecType specType_;
 	private int rowNo_;
 	private int colNo_;
 	
-	public Orb(OrbType orbType, Vector2 pos, int colNo, int rowNo, TextureRegion texture) {
+	public Orb(OrbType orbType, OrbSpecType orbSpecType, Vector2 pos, int rowNo, int colNo, TextureRegion texture) {
 		this(pos, texture);
-		this.orbType_ = orbType;
-		this.colNo_ = colNo;
+		this.type_ = orbType;
+		this.specType_ = orbSpecType;
 		this.rowNo_ = rowNo;
+		this.colNo_ = colNo;
 	}
 	
 	public boolean hit(Vector2 coords) {
@@ -41,7 +43,15 @@ public class Orb extends GameEntity {
 	}
 
 	public OrbType getType() {
-		return this.orbType_;
+		return this.type_;
+	}
+	
+	public void setType(OrbType orbType) {
+		this.type_ = orbType;
+	}
+	
+	public OrbSpecType getSpecType() {
+		return this.specType_;
 	}
 	
 	@Override

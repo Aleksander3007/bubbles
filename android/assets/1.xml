@@ -1,0 +1,80 @@
+﻿
+
+<?xml version="1.0" encoding="utf-8"?>
+<level1 name="level name1">
+  <tasks>
+    <task name="1 + 1" points="1" time="5" required="1">
+      <results>
+        <result value="2"></result>
+        <result value="1"></result>
+        <result value="3"></result>
+      </results>
+    </task>
+    <task name="2 + 1" points="1" time="5" required="1">
+    	<results>
+    		<result value="3"></result>
+    		<result value="4"></result>
+    		<result value="5"></result>
+    	</results>
+    </task>
+    <task name="2 + 2" points="1" time="5" required="1">
+    	<results>
+    		<result value="4"></result>
+    		<result value="5"></result>
+    		<result value="6"></result>
+    	</results>
+    </task>
+    <task name="2 + 3" points="1" time="5" required="1">
+    	<results>
+    		<result value="5"></result>
+    		<result value="6"></result>
+    		<result value="7"></result>
+    	</results>
+    </task>
+    <task name="3+3" points="1" time="5" required="1">
+    	<results>
+    		<result value="6"></result>
+    		<result value="5"></result>
+    		<result value="7"></result>
+    	</results>
+    </task>
+    <task name="4+3" points="1" time="5" required="1">
+    	<results>
+    		<result value="7"></result>
+    		<result value="8"></result>
+    		<result value="6"></result>
+    	</results>
+    </task>
+    <task name="4+4" points="1" time="5" required="1">
+    	<results>
+    		<result value="8"></result>
+    		<result value="9"></result>
+    		<result value="7"></result>
+    		<result value="6"></result>
+    		<result value="5"></result>
+    		<result value="10"></result>
+    	</results>
+    </task>
+    <task name="5+4" points="1" time="5" required="1">
+    	<results>
+    		<result value="9"></result>
+    		<result value="8"></result>
+    		<result value="7"></result>
+    		<result value="6"></result>
+    		<result value="5"></result>
+    		<result value="10"></result>
+    	</results>
+    </task>
+    <task name="5+5" points="1" time="5" required="1">
+    	<results>
+    		<result value="10"></result>
+    		<result value="8"></result>
+    		<result value="7"></result>
+    		<result value="9"></result>
+    		<result value="5"></result>
+    		<result value="11"></result>
+    	</results>
+    </task>
+  </tasks>
+</level1>
+

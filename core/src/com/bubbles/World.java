@@ -1,31 +1,32 @@
 package com.bubbles;
 
+import java.io.IOException;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ArrayMap;
+import com.badlogic.gdx.utils.ObjectMap;
+import com.badlogic.gdx.utils.XmlReader;
 
 public class World {
 	private AssetManager assets_;
 	private TextureRegion  touchLineTexture_;
-	private ArrayMap<OrbType, TextureRegion> orbTextures_ = new ArrayMap<OrbType, TextureRegion>();
+	private ArrayMap<OrbType, ArrayMap<OrbSpecType, TextureRegion>> orbTextures_ = 
+			new ArrayMap<OrbType, ArrayMap<OrbSpecType, TextureRegion>>();
 	
 	private Vector2 pos_;
 	private float width_;
 	private float height_;
 	private int nRows_;
 	private int nColumns_;
-	private Array<Orb> orbs_ = new Array<Orb>();
+	private Orb[][] orbs_;
 	private Array<Orb> selectedOrbs_ = new Array<Orb>();
 	private Array<TouchLine> touchLines_ = new Array<TouchLine>();
-	
-	/**
-	 * Массив всех элементов мира.
-	 */
-	private Array<GameEntity> gameEntities_ = new Array<GameEntity>();
 	
 	public World(final Vector2 pos, AssetManager assets) {
 		// Тут определяются параметры которые не зависят от внешнего мира.
@@ -52,87 +53,203 @@ public class World {
 		
 		if (hitX && hitY) {
 			// Определяем был ли нажат на элемент.
-			for (Orb orb : orbs_) {
-				if (orb.hit(coords)) {
-					if (!isOrbSelected(orb)) {
-						
-						// TODO:  Уже в Game после отжатия проверяем World.ProfitByOrbs() - здесь проверяется выделены ли объекты одного типа и считается очки за это.
-						
-						// Если выбран до этого как минимум еще один.
-						if (selectedOrbs_.size > 0) {
-							Orb prevOrb = selectedOrbs_.peek();
-
-							// Если соседний, то выделяем (защита от нажатий несколькими пальцами в разных местах).
-							if ((Math.abs((orb.getColNo() - prevOrb.getColNo())) == 1) ||
-									(Math.abs((orb.getRowNo() - prevOrb.getRowNo())) == 1)) {
-								selectedOrbs_.add(orb);
-								
-								Vector2 touchLinePos = getTouchLinePos(prevOrb, orb);
-								float touchLineRotationDeg = getTouchLineRotationDeg(prevOrb, orb);
-								
-								TouchLine touchLine = new TouchLine(touchLinePos, touchLineRotationDeg, touchLineTexture_);
-								
-								touchLines_.add(touchLine);
-								gameEntities_.add((GameEntity)touchLine);
-							}
-						} 
-						else {
-							selectedOrbs_.add(orb);
-						}
-					}
-					
-					break;
+			for (int iRow = 0; iRow < nRows_; iRow++) {
+				for (int iCol = 0; iCol < nColumns_; iCol++) {
+					if (hitOrb(orbs_[iRow][iCol], coords))
+						return true;
 				}
 			}
 		}
 		
 		return (hitX && hitY);
 	}
-	
-	public int profitByOrbs() {
+
+	public int getProfitByOrbs() {
 		// TODO: Возможно это должно быть в классе GameRules.
 		// А лучше GameRule, и GameRuleManager.
-		if (selectedOrbs_.size >= 2) {
-			OrbType orbType = selectedOrbs_.first().getType();
-			for (Orb orb : selectedOrbs_) {
-				if (orb.getType() != orbType) {
-					return 0;
-				}
-			}
-			// TODO: Конечно тут должен быть более сложный расчет. (Чем больше выделено тем выше ставка).
-			return (selectedOrbs_.size * 20); // TODO: Magic number!
-		}
-		else {
+		if (selectedOrbs_.size < 2) {
 			return 0;
 		}
+		
+		int profit = 0;
+		int factor = 1;
+		OrbType orbType = selectedOrbs_.first().getType();
+		for (Orb orb : selectedOrbs_) {
+			if ((orb.getType() == orbType) || (orb.getType() == OrbType.UNIVERSAL) || (orbType == OrbType.UNIVERSAL)) {
+				profit += 10;
+			} 
+			// Все элементы должны быть одинакового OrbType.
+			else {
+				return 0;
+			}
+			
+			switch (orb.getSpecType()) {
+			case DOUBLE: {
+				factor *= 2;
+				break;
+			}
+			case TRIPLE: {
+				factor *= 3;
+				break;
+			}
+			case ROWS_EATER: {
+				// Элементы должны тоже считаться.
+				break;
+			}
+			default:
+				// В остальных случаях ничего не делаем.
+				break;
+			}
+			
+			orbType = orb.getType();
+		}
+		
+		return (profit * factor);
 	}
 	
 	public void update() {
-		//....
+		if (selectedOrbs_.size < 2) {
+			return;
+		}
+		
+		// Ищем спец. Orbs.
+		for (Orb orb : selectedOrbs_) {
+			switch (orb.getSpecType()) {
+			case ROWS_EATER: {
+				// Добавляем все элементы строки как выделенные. 
+				for (int iCol = 0; iCol < nColumns_; iCol++) {
+					// ... без повтора в массиве.
+					if (!selectedOrbs_.contains(orbs_[orb.getRowNo()][iCol], true)) {
+						// ... и делаем их уникальным, чтобы считался Profit и для них.
+						orbs_[orb.getRowNo()][iCol].setType(OrbType.UNIVERSAL);
+						selectedOrbs_.add(orbs_[orb.getRowNo()][iCol]);
+					}
+				}
+			}
+			default:
+				// В остальных случаях ничего не делаем.
+				break;
+			}
+		}
 	}
 	
-	public void clearSelectedOrbs() {	
-		for (TouchLine touchLine : touchLines_) {
-			gameEntities_.removeValue((GameEntity)touchLine, true);
-		}
+	public void removeSelection() {
 		touchLines_.clear();
 		selectedOrbs_.clear();
 	}
 	
+	/**
+	 * Удалить выделенные Orbs.
+	 */
+	public void deleteSelectedOrbs() {
+		// Определяем верхних соседей.
+		for (Orb orb : selectedOrbs_) {
+			for (int iRow = orb.getRowNo() + 1; iRow < nRows_; iRow++) {
+				// Опускаем все элементы колонки на клетку ниже.
+				createOrb(orbs_[iRow][orb.getColNo()].getType(), 
+						orbs_[iRow][orb.getColNo()].getSpecType(),
+						iRow - 1, orb.getColNo());
+			}
+			
+			// На пустую верхную часть генерируем новые.
+			createOrb(nRows_ - 1, orb.getColNo());
+		}
+	}
+	
 	public Array<GameEntity> getEntities() {
-		return gameEntities_;
+		Array<GameEntity> gameEntities = new Array<GameEntity>();
+		for (int iRow = 0; iRow < nRows_; iRow++) {
+			for (int iCol = 0; iCol < nColumns_; iCol++) {
+				gameEntities.add(orbs_[iRow][iCol]);
+			}
+		}
+		gameEntities.addAll(touchLines_);
+		return gameEntities;
 	}
 	
 	public void dispose () {
-		for (Orb orb : orbs_) {
-			orb.dispose();
-		}
-		orbs_.clear();
+		clearOrbs();
 		
 		for (TouchLine touchLine : touchLines_) {
 			touchLine.dispose();
 		}
 		touchLines_.clear();
+	}
+	
+	public void createLevel() {
+		clearOrbs();
+
+		orbs_ = new Orb[nRows_][nColumns_];
+		for (int iRow = 0; iRow < nRows_; iRow++) {
+			for (int iCol = 0; iCol < nColumns_; iCol++) {
+				createOrb(iRow, iCol);
+			}
+		}
+		
+		Gdx.app.log("World", "Level is created.");
+	}
+	
+	private OrbType generateOrbType() {
+		// TODO: Подумать где дожна находится карта вероятностей выпадения. (GameRuler?)
+		ArrayMap<OrbType, Float> orbTypeProbabilities = new ArrayMap<OrbType, Float>();
+		orbTypeProbabilities.put(OrbType.YELLOW, 32f);
+		orbTypeProbabilities.put(OrbType.RED, 32f);
+		orbTypeProbabilities.put(OrbType.GREEN, 32f);
+		orbTypeProbabilities.put(OrbType.UNIVERSAL, 4f);
+		
+		return GameMath.generateValue(orbTypeProbabilities);
+	}
+	
+	private OrbSpecType generateOrbSpecType() {
+		// TODO: Подумать где дожна находится карта вероятностей выпадения. (GameRuler?)
+		ArrayMap<OrbSpecType, Float> orbTypeProbabilities = new ArrayMap<OrbSpecType, Float>();
+		orbTypeProbabilities.put(OrbSpecType.NONE, 90f);
+		orbTypeProbabilities.put(OrbSpecType.DOUBLE, 0f);
+		orbTypeProbabilities.put(OrbSpecType.TRIPLE, 0f);
+		orbTypeProbabilities.put(OrbSpecType.AROUND_EATER, 0f);
+		orbTypeProbabilities.put(OrbSpecType.ROWS_EATER, 10f);
+		orbTypeProbabilities.put(OrbSpecType.COLUMNS_EATER, 0f);
+		
+		return GameMath.generateValue(orbTypeProbabilities);
+	}
+	
+	private void clearOrbs() {
+		if (orbs_ != null)
+		{
+			for (int iRow = 0; iRow < nRows_; iRow++) {
+				for (int iCol = 0; iCol < nColumns_; iCol++) {
+					orbs_[iRow][iCol].dispose();
+					orbs_[iRow][iCol] = null;
+				}
+			}
+		}
+	}
+	
+	private boolean hitOrb(Orb orb, Vector2 coords) {
+		if (orb.hit(coords)) {
+			if (!isOrbSelected(orb)) {
+				// Если выбран до этого как минимум еще один.
+				if (selectedOrbs_.size > 0) {
+					Orb prevOrb = selectedOrbs_.peek();
+
+					// Если соседний, то выделяем (защита от нажатий несколькими пальцами в разных местах).
+					if ((Math.abs((orb.getColNo() - prevOrb.getColNo())) == 1) ||
+							(Math.abs((orb.getRowNo() - prevOrb.getRowNo())) == 1)) {
+						selectedOrbs_.add(orb);
+						TouchLine touchLine = new TouchLine(prevOrb, orb, touchLineTexture_);
+						touchLines_.add(touchLine);
+					}
+				} 
+				else {
+					selectedOrbs_.add(orb);
+				}
+			}
+			
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
 	
 	private boolean isOrbSelected(Orb orb) {
@@ -143,85 +260,77 @@ public class World {
 		}
 		return false;
 	}
-
-	private float getTouchLineRotationDeg(Orb prevOrb, Orb orb) {
-		// Если выделение идёт снизу вверх.
-		if (orb.getY() != prevOrb.getY()) {
-			return 90;
-		}
-		else {
-			return 0;
-		}
+	
+	/**
+	 * Создать Orb.
+	 * @param rowNo Номер строки.
+	 * @param colNo Номер столбца.
+	 */
+	private void createOrb(final int rowNo, final int colNo) {
+		OrbType orbType = generateOrbType();
+		OrbSpecType orbSpecType = generateOrbSpecType();
+		createOrb(orbType, orbSpecType, rowNo, colNo);
 	}
 
-	private Vector2 getTouchLinePos(Orb prevOrb, Orb curOrb) {
-		Orb startOrb;
-		// Если выделение идёт снизу вверх.
-		if (curOrb.getY() != prevOrb.getY()) {
-			// Если выделение идёт снизу вверх.
-			if (curOrb.getY() > prevOrb.getY()) {
-				Gdx.app.log("World.hit", "bottom to top");
-				startOrb = prevOrb;
-			} 
-			// Если выделение идёт сверху вниз.
-			else {
-				Gdx.app.log("World.hit", "top to bottom");
-				startOrb = curOrb;
-			}
-			
-			return new Vector2(
-					startOrb.getX() + (Orb.WIDTH / 2) - (TouchLine.WIDTH / 2),
-					startOrb.getY() + Orb.HEIGHT  - (TouchLine.HEIGHT / 2)
-					);
-		} 
-		else {
-			// Если выделение идёт слево направо.
-			if (curOrb.getX() > prevOrb.getX()) {
-				Gdx.app.log("World.hit", "left to right");
-				startOrb = prevOrb;
-			}
-			// Если выделение идёт справо налево.
-			else {
-				Gdx.app.log("World.hit", "right to left");
-				startOrb = curOrb;
-			}
-			
-			return new Vector2(
-					startOrb.getX() + (Orb.WIDTH / 2),
-					startOrb.getY() + (Orb.HEIGHT / 2) - (TouchLine.HEIGHT / 2)
-					);
-		}
-	}
+	/**
+	 * Создать Orb.
+	 * @param orbType Тип.
+	 * @param orbSpecType Специальный тип.
+	 * @param rowNo Номер строки.
+	 * @param colNo Номер столбца.
+	 */
+	private void createOrb(final OrbType orbType, final OrbSpecType orbSpecType, final int rowNo, final int colNo) {
+		TextureRegion orbTexture = orbTextures_.get(orbType).get(orbSpecType);
+		Vector2 orbPos = new Vector2(
+				(float) Orb.WIDTH * colNo,
+				(float) Orb.HEIGHT * rowNo
+				);
 
-	private void createLevel() {
-		OrbType orbType;
-		TextureRegion orbTexture;
-		for (int iRow = 0; iRow < nRows_; iRow++) {
-			for (int iCol = 0; iCol < nColumns_; iCol++) {
-				
-				orbType = (iRow % 2 == 0) ? OrbType.GREEN : OrbType.YELLOW;
-				orbTexture = orbTextures_.get(orbType);
-				Vector2 orbPos = new Vector2(
-						(float) Orb.WIDTH * iCol,
-						(float) Orb.HEIGHT * iRow
-						);
-				
-				Orb orb = new Orb(orbType, orbPos, iCol, iRow, orbTexture);
-				orbs_.add(orb);
-				gameEntities_.add((GameEntity)orb);
-			}
-		}
+		orbs_[rowNo][colNo] = new Orb(orbType, orbSpecType, orbPos, rowNo, colNo, orbTexture);
 	}
 
 	private void initTextures() {
-		/* TODO: Тут можно просто хранить AssetDescriptor для каждого цвета.*/
-		orbTextures_.put(OrbType.YELLOW, new TextureRegion(assets_.get("circles-2.png", Texture.class), 0, 0, 256, 256));
-		orbTextures_.put(OrbType.RED, new TextureRegion(assets_.get("circles-2.png", Texture.class), 256, 0, 256, 256));
-		
-		Texture greenTexture = assets_.get("green-bubble-3.png", Texture.class);
-		orbTextures_.put(OrbType.GREEN, new TextureRegion(greenTexture, 0, 0, 256, 256));
-		
-		// TODO: TouchLine.ASSET_DECRIPTOR - вообще всё будет в одном файле. ПОТОМ TouchLine.ASSET_DESCRIPTOR - удалить, добавить общий WORLD_DESCRITOR.
-		touchLineTexture_ = new TextureRegion(assets_.get(TouchLine.ASSET_DESCRIPTOR), 0, 0, 256, 64);
+		try {
+			// TODO: В отдельный класс?
+			XmlReader xmlReader = new XmlReader();
+		    XmlReader.Element root = xmlReader.parse(Gdx.files.internal("orbsTextures.xml"));
+		    Gdx.app.log("World.initTextures()", "root.childCount = " + Integer.toString(root.getChildCount()));
+		    for (int iOrbs = 0; iOrbs < root.getChildCount(); iOrbs++) {
+		    	XmlReader.Element xmlOrb = root.getChild(iOrbs);
+		    	Gdx.app.log("World.initTextures()", "root.child.orbType = " + xmlOrb.getAttribute("orbType"));
+		    	Gdx.app.log("World.initTextures()", "root.child.orbSpecType = " + xmlOrb.getAttribute("orbSpecType"));
+		    	
+		    	OrbType orbType = OrbType.valueOf(xmlOrb.getAttribute("orbType"));
+		    	OrbSpecType orbSpecType = OrbSpecType.valueOf(xmlOrb.getAttribute("orbSpecType"));
+		    	XmlReader.Element xmlOrbTexture = xmlOrb.getChildByName("texture");
+		    	
+		    	int orbTextureX = Integer.parseInt(xmlOrbTexture.getAttribute("x"));
+		    	int orbTextureY = Integer.parseInt(xmlOrbTexture.getAttribute("y"));
+		    	int orbTextureWidth = Integer.parseInt(xmlOrbTexture.getAttribute("width"));
+		    	int orbTextureHeight = Integer.parseInt(xmlOrbTexture.getAttribute("height"));
+		    	
+		    	TextureRegion orbTexture = new TextureRegion(
+		    			assets_.get(xmlOrbTexture.getAttribute("path"), Texture.class), 
+		    			orbTextureX, orbTextureY, 
+		    			orbTextureWidth, orbTextureHeight);
+		    	//orbSpecTypeTextures = new ArrayMap<OrbSpecType, TextureRegion>();
+		    	//orbTextures_.put(orbType, );
+		    	if (orbTextures_.get(orbType) != null) {
+		    		orbTextures_.get(orbType).put(orbSpecType, orbTexture);
+		    	}
+		    	else {
+		    		ArrayMap<OrbSpecType, TextureRegion> orbSpecTypeTextures = new ArrayMap<OrbSpecType, TextureRegion>();
+		    		orbSpecTypeTextures.put(orbSpecType, orbTexture);
+		    		orbTextures_.put(orbType, orbSpecTypeTextures);
+		    	}
+		    }
+		    
+		    touchLineTexture_ = new TextureRegion(assets_.get(TouchLine.ASSET_DESCRIPTOR), 0, 0, 256, 64);
+		    Gdx.app.log("World", "File with textures of orbs is loaded.");
+		}
+		catch (IOException e) {
+			 Gdx.app.error("World", "File with textures of orbs is NOT loaded.");
+			e.printStackTrace();
+		}
 	}
 }
